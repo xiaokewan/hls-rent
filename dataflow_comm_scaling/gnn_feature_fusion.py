@@ -44,17 +44,25 @@ NODE_PROVENANCE_KEYS = [
     "function",
     "loop_id",
     "basic_block",
+    "ir_source_file",
+    "ir_line",
     "pragma_ids",
+    "pragma_kinds",
+    "pragma_texts",
 ]
 
 EDGE_PROVENANCE_KEYS = [
     "source_file",
     "line",
     "column",
+    "producer_source_file",
+    "consumer_source_file",
     "producer_line",
     "consumer_line",
     "loop_id",
     "pragma_ids",
+    "pragma_kinds",
+    "pragma_texts",
 ]
 
 NODE_FEATURE_NAMES = [

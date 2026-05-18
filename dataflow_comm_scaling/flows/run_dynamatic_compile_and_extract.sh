@@ -7,6 +7,7 @@ Compile a C kernel with Dynamatic and extract a normalized dataflow graph.
 
 Usage:
   run_dynamatic_compile_and_extract.sh --source KERNEL.c --design NAME --out-dir DIR [--dynamatic-root DIR]
+    [--annotate-pragmas] [--pragma-source KERNEL.c] [--attach-function-scope]
 
 Example:
   bash dataflow_comm_scaling/flows/run_dynamatic_compile_and_extract.sh \
@@ -21,6 +22,10 @@ source_file=""
 design=""
 out_dir=""
 dynamatic_root="${DYNAMATIC_ROOT:-/media/xiaokewan/TOSHIBA/tools/dynamatic}"
+annotate_pragmas=0
+attach_function_scope=0
+pragma_line_window=0
+pragma_sources=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -38,6 +43,22 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dynamatic-root)
       dynamatic_root="$2"
+      shift 2
+      ;;
+    --annotate-pragmas)
+      annotate_pragmas=1
+      shift
+      ;;
+    --pragma-source)
+      pragma_sources+=("$2")
+      shift 2
+      ;;
+    --attach-function-scope)
+      attach_function_scope=1
+      shift
+      ;;
+    --pragma-line-window)
+      pragma_line_window="$2"
       shift 2
       ;;
     --help|-h)
@@ -89,6 +110,25 @@ cd "$repo_root"
 python3 dataflow_comm_scaling/extractors/dynamatic_mlir_to_dataflow.py \
   "$handshake_mlir" \
   --out "$json_out"
+
+if [[ "$annotate_pragmas" -eq 1 ]]; then
+  if [[ "${#pragma_sources[@]}" -eq 0 ]]; then
+    pragma_sources+=("$source_abs")
+  fi
+  pragma_args=(
+    --graph-json "$json_out"
+    --out "${json_out%.json}.annotated.tmp.json"
+    --line-window "$pragma_line_window"
+  )
+  if [[ "$attach_function_scope" -eq 1 ]]; then
+    pragma_args+=(--attach-function-scope)
+  fi
+  for pragma_source in "${pragma_sources[@]}"; do
+    pragma_args+=(--source-c "$pragma_source")
+  done
+  python3 dataflow_comm_scaling/extractors/annotate_pragmas.py "${pragma_args[@]}"
+  mv "${json_out%.json}.annotated.tmp.json" "$json_out"
+fi
 
 python3 dataflow_comm_scaling/dataflow_comm_scaling.py \
   "$json_out" \

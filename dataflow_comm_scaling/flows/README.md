@@ -14,6 +14,23 @@ bash dataflow_comm_scaling/flows/run_dynamatic_compile_and_extract.sh \
   --dynamatic-root /media/xiaokewan/TOSHIBA/tools/dynamatic
 ```
 
+If the C kernel contains HLS pragmas, ask the flow to attach pragma provenance
+before building Rent/GNN features:
+
+```bash
+bash dataflow_comm_scaling/flows/run_dynamatic_compile_and_extract.sh \
+  --source kernels/mm.c \
+  --design mm \
+  --out-dir dataflow_comm_scaling/real_examples/dynamatic \
+  --dynamatic-root /media/xiaokewan/TOSHIBA/tools/dynamatic \
+  --annotate-pragmas \
+  --attach-function-scope
+```
+
+Use `--attach-function-scope` only when the Dynamatic output lacks original C
+line locations. It is intentionally coarse; exact `source_file`/`line`
+provenance is better for root-cause attribution.
+
 This produces:
 
 ```text

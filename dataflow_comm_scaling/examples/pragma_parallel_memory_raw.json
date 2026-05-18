@@ -1,0 +1,173 @@
+{
+  "name": "pragma_parallel_memory_raw",
+  "description": "Small synthetic kernel with C source lines but without pre-attached pragma IDs.",
+  "nodes": [
+    {
+      "id": "load_A0",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "mm.c",
+      "line": 8,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "A[k * 2 + u]"
+    },
+    {
+      "id": "load_A1",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "mm.c",
+      "line": 8,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "A[k * 2 + u]"
+    },
+    {
+      "id": "load_B0",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "mm.c",
+      "line": 9,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "B[k * 2 + u]"
+    },
+    {
+      "id": "load_B1",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "mm.c",
+      "line": 9,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "B[k * 2 + u]"
+    },
+    {
+      "id": "mul0",
+      "op": "mul",
+      "kind": "compute",
+      "area": 3,
+      "source_file": "mm.c",
+      "line": 10,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "a * b"
+    },
+    {
+      "id": "mul1",
+      "op": "mul",
+      "kind": "compute",
+      "area": 3,
+      "source_file": "mm.c",
+      "line": 10,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "a * b"
+    },
+    {
+      "id": "add0",
+      "op": "add",
+      "kind": "compute",
+      "area": 1,
+      "source_file": "mm.c",
+      "line": 10,
+      "function": "mm",
+      "loop_id": "u",
+      "text": "acc += a * b"
+    },
+    {
+      "id": "store_C",
+      "op": "store",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "mm.c",
+      "line": 13,
+      "function": "mm",
+      "loop_id": "",
+      "text": "C[0] = acc"
+    }
+  ],
+  "edges": [
+    {
+      "src": "load_A0",
+      "dst": "mul0",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 8,
+      "consumer_line": 10
+    },
+    {
+      "src": "load_B0",
+      "dst": "mul0",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 9,
+      "consumer_line": 10
+    },
+    {
+      "src": "load_A1",
+      "dst": "mul1",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 8,
+      "consumer_line": 10
+    },
+    {
+      "src": "load_B1",
+      "dst": "mul1",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 9,
+      "consumer_line": 10
+    },
+    {
+      "src": "mul0",
+      "dst": "add0",
+      "width": 256,
+      "rate": 1,
+      "kind": "data",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 10,
+      "consumer_line": 10
+    },
+    {
+      "src": "mul1",
+      "dst": "add0",
+      "width": 256,
+      "rate": 1,
+      "kind": "data",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 10,
+      "consumer_line": 10
+    },
+    {
+      "src": "add0",
+      "dst": "store_C",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "source_file": "mm.c",
+      "producer_line": 10,
+      "consumer_line": 13
+    }
+  ]
+}

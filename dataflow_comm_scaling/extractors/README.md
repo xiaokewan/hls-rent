@@ -38,6 +38,16 @@ python3 dataflow_comm_scaling/gnn_feature_fusion.py \
   --partition topological
 ```
 
+If the graph has C source line provenance but does not yet carry explicit
+pragma IDs, annotate it before feature generation:
+
+```bash
+python3 dataflow_comm_scaling/extractors/annotate_pragmas.py \
+  --graph-json dataflow_comm_scaling/real_examples/aes.hlsyn.json \
+  --source-c /path/to/aes_kernel.c \
+  --out dataflow_comm_scaling/real_examples/aes.hlsyn.pragmas.json
+```
+
 Build all extracted HLSyn graphs:
 
 ```bash
@@ -74,8 +84,58 @@ The extractor is a conservative textual MLIR reader:
 - operation lines become nodes;
 - SSA use-def dependencies become directed edges;
 - memory/control operations are tagged semantically;
-- line, function, and basic-block provenance are retained.
+- MLIR line, function, and basic-block provenance are retained;
+- when textual MLIR has `loc("file":line:column)` metadata, original C
+  source location is retained and the MLIR line is kept as `ir_line`.
 
 This gives us the L2 dataflow/Handshake-level graph for the early-prediction
 ablation. A future version should switch to a real MLIR parser or a Dynamatic
 pass that exports JSON directly.
+
+The flow wrapper can also run pragma annotation:
+
+```bash
+bash dataflow_comm_scaling/flows/run_dynamatic_compile_and_extract.sh \
+  --source kernels/mm.c \
+  --design mm \
+  --out-dir dataflow_comm_scaling/real_examples/dynamatic \
+  --annotate-pragmas \
+  --attach-function-scope
+```
+
+`--attach-function-scope` is a coarse fallback for Dynamatic outputs that have
+function names but no original C line locations. Prefer exact C line metadata
+when available.
+
+## C Pragma Annotation
+
+`annotate_pragmas.py` parses source directives such as:
+
+```text
+#pragma HLS PIPELINE II=1
+#pragma HLS UNROLL factor=4
+#pragma HLS ARRAY_PARTITION variable=A complete dim=1
+```
+
+and attaches these fields to matched graph nodes and edges:
+
+```text
+pragma_ids
+pragma_kinds
+pragma_texts
+```
+
+This is the source-level provenance needed by the attribution stage:
+
+```text
+Rent-heavy region -> DFG nodes/edges -> pragma_ids -> ranked HLS cause
+```
+
+Run the bundled smoke test:
+
+```bash
+python3 dataflow_comm_scaling/extractors/annotate_pragmas.py \
+  --graph-json dataflow_comm_scaling/examples/pragma_parallel_memory_raw.json \
+  --source-c dataflow_comm_scaling/examples/kernels/mm.c \
+  --out dataflow_comm_scaling/attribution_out/pragma_parallel_memory.annotated.json
+```

@@ -163,10 +163,12 @@ The paper should emphasize that the exponent becomes explainable through the par
 The first deterministic baseline is now:
 
 ```text
+dataflow_comm_scaling/extractors/annotate_pragmas.py
 dataflow_comm_scaling/attribution/pragma_attribution.py
 ```
 
-It consumes:
+The first script extracts `#pragma HLS ...` from C/C++ source and attaches
+`pragma_ids` to DFG/CDFG nodes and edges. The second script consumes:
 
 ```text
 input:

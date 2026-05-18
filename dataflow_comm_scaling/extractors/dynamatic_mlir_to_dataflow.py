@@ -13,7 +13,7 @@ import argparse
 import json
 import os
 import re
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 RESULT_RE = re.compile(r"^\s*(?:(?P<results>%[\w\d_]+(?:\s*,\s*%[\w\d_]+)*)\s*=\s*)?(?P<op>[\w.]+)")
@@ -23,6 +23,9 @@ BLOCK_RE = re.compile(r"^\s*\^([\w\d_.$-]+)")
 HANDSHAKE_NAME_RE = re.compile(r'handshake\.name\s*=\s*"([^"]+)"')
 HANDSHAKE_BB_RE = re.compile(r"handshake\.bb\s*=\s*(\d+)")
 ARG_RE = re.compile(r"(%[\w\d_]+)\s*:\s*([^,\)]+)")
+LOC_DIRECT_RE = re.compile(r'loc\("([^"]+)":(\d+):(\d+)\)')
+LOC_REF_RE = re.compile(r"loc\(#([\w\d_.$-]+)\)")
+LOC_DEF_RE = re.compile(r'#([\w\d_.$-]+)\s*=\s*loc\("([^"]+)":(\d+):(\d+)\)')
 
 
 CONTROL_OPS = {
@@ -114,14 +117,42 @@ def parse_signature_args(signature: str) -> List[Tuple[str, str]]:
     return [(match.group(1), match.group(2).strip()) for match in ARG_RE.finditer(signature)]
 
 
+def scan_location_defs(lines: Sequence[str]) -> Dict[str, Dict[str, Any]]:
+    defs: Dict[str, Dict[str, Any]] = {}
+    for line in lines:
+        match = LOC_DEF_RE.search(line)
+        if match:
+            defs[match.group(1)] = {
+                "source_file": match.group(2),
+                "line": int(match.group(3)),
+                "column": int(match.group(4)),
+            }
+    return defs
+
+
+def extract_location(line: str, loc_defs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    direct = LOC_DIRECT_RE.search(line)
+    if direct:
+        return {
+            "source_file": direct.group(1),
+            "line": int(direct.group(2)),
+            "column": int(direct.group(3)),
+        }
+    ref = LOC_REF_RE.search(line)
+    if ref:
+        return dict(loc_defs.get(ref.group(1), {}))
+    return {}
+
+
 def convert_mlir(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8", errors="ignore") as fp:
         raw_lines = fp.readlines()
 
+    loc_defs = scan_location_defs(raw_lines)
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
     producer: Dict[str, str] = {}
-    producer_line: Dict[str, int] = {}
+    producer_provenance: Dict[str, Dict[str, Any]] = {}
     node_kind: Dict[str, str] = {}
     used_ids: Dict[str, int] = {}
     current_function = ""
@@ -148,7 +179,7 @@ def convert_mlir(path: str) -> Dict[str, Any]:
             }
         )
         producer[var] = node_id
-        producer_line[var] = line_no
+        producer_provenance[var] = {"source_file": path, "line": line_no}
         node_kind[node_id] = kind
 
     for line_no, raw_line in enumerate(raw_lines, start=1):
@@ -201,21 +232,27 @@ def convert_mlir(path: str) -> Dict[str, Any]:
         width = infer_width(line, default=1 if kind == "control" else 32)
         bb_attr = HANDSHAKE_BB_RE.search(line)
         node_id = stable_node_id(operation_name(op, results, line, line_no), used_ids)
+        loc = extract_location(line, loc_defs)
+        source_file = loc.get("source_file", path)
+        source_line = loc.get("line", line_no)
 
-        nodes.append(
-            {
-                "id": node_id,
-                "op": op,
-                "kind": kind,
-                "area": 1,
-                "inferred_width": width,
-                "source_file": path,
-                "line": line_no,
-                "function": current_function,
-                "basic_block": bb_attr.group(1) if bb_attr else current_block,
-                "text": stripped,
-            }
-        )
+        node_payload = {
+            "id": node_id,
+            "op": op,
+            "kind": kind,
+            "area": 1,
+            "inferred_width": width,
+            "source_file": source_file,
+            "line": source_line,
+            "function": current_function,
+            "basic_block": bb_attr.group(1) if bb_attr else current_block,
+            "text": stripped,
+            "ir_source_file": path,
+            "ir_line": line_no,
+        }
+        if "column" in loc:
+            node_payload["column"] = loc["column"]
+        nodes.append(node_payload)
         node_kind[node_id] = kind
 
         for operand in operands:
@@ -223,6 +260,7 @@ def convert_mlir(path: str) -> Dict[str, Any]:
             if not src:
                 continue
             edge_kind, edge_sem = edge_semantic(node_kind.get(src, "compute"), kind, semantic)
+            prod_prov = producer_provenance.get(operand, {"source_file": path, "line": line_no})
             edges.append(
                 {
                     "src": src,
@@ -231,9 +269,11 @@ def convert_mlir(path: str) -> Dict[str, Any]:
                     "rate": 1,
                     "kind": edge_kind,
                     "semantic": edge_sem,
-                    "source_file": path,
-                    "producer_line": producer_line.get(operand),
-                    "consumer_line": line_no,
+                    "source_file": source_file,
+                    "producer_source_file": prod_prov.get("source_file"),
+                    "consumer_source_file": source_file,
+                    "producer_line": prod_prov.get("line"),
+                    "consumer_line": source_line,
                     "function": current_function,
                     "basic_block": bb_attr.group(1) if bb_attr else current_block,
                 }
@@ -241,7 +281,11 @@ def convert_mlir(path: str) -> Dict[str, Any]:
 
         for result in results:
             producer[result] = node_id
-            producer_line[result] = line_no
+            producer_provenance[result] = {
+                "source_file": source_file,
+                "line": source_line,
+                "column": loc.get("column"),
+            }
 
     return {
         "name": os.path.splitext(os.path.basename(path))[0],

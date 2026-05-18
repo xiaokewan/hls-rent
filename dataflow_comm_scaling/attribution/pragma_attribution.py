@@ -251,7 +251,11 @@ def provenance_entities(provenance: Dict[str, Any], fallback_id: str, fallback_t
     return [(fallback_type, fallback_id)]
 
 
-def record_source_metadata(record: Dict[str, Any], provenance: Dict[str, Any]) -> None:
+def record_source_metadata(
+    record: Dict[str, Any],
+    provenance: Dict[str, Any],
+    entity: Tuple[str, str] | None = None,
+) -> None:
     for key in ("line", "producer_line", "consumer_line"):
         location = source_location(provenance, key)
         if location:
@@ -260,10 +264,22 @@ def record_source_metadata(record: Dict[str, Any], provenance: Dict[str, Any]) -
         record["functions"].add(str(provenance["function"]))
     if provenance.get("loop_id") not in (None, ""):
         record["loops"].add(str(provenance["loop_id"]))
-    for pragma_id in as_list(provenance.get("pragma_ids")):
-        clean = clean_id(pragma_id)
-        if clean:
-            record["pragma_ids"].add(clean)
+    pragma_ids = [clean_id(item) for item in as_list(provenance.get("pragma_ids")) if clean_id(item)]
+    pragma_kinds = [clean_id(item) for item in as_list(provenance.get("pragma_kinds")) if clean_id(item)]
+    pragma_texts = [clean_id(item) for item in as_list(provenance.get("pragma_texts")) if clean_id(item)]
+    if entity and entity[0] == "pragma":
+        for index, pragma_id in enumerate(pragma_ids):
+            if pragma_id != entity[1]:
+                continue
+            record["pragma_ids"].add(pragma_id)
+            if index < len(pragma_kinds):
+                record["pragma_kinds"].add(pragma_kinds[index])
+            if index < len(pragma_texts):
+                record["pragma_texts"].add(pragma_texts[index])
+    else:
+        record["pragma_ids"].update(pragma_ids)
+        record["pragma_kinds"].update(pragma_kinds)
+        record["pragma_texts"].update(pragma_texts)
 
 
 def edge_key(edge: Dict[str, Any], index: int) -> str:
@@ -412,6 +428,8 @@ def empty_record(entity_type: str, key: str) -> Dict[str, Any]:
         "functions": set(),
         "loops": set(),
         "pragma_ids": set(),
+        "pragma_kinds": set(),
+        "pragma_texts": set(),
         "ops": Counter(),
         "kinds": Counter(),
         "evidence": [],
@@ -430,7 +448,7 @@ def add_contribution(
     record["score"] += score
     for component, value in components.items():
         record["components"][component] += COMPONENT_WEIGHTS.get(component, 0.0) * value
-    record_source_metadata(record, provenance)
+    record_source_metadata(record, provenance, entity)
     if evidence.get("node_id"):
         record["node_ids"].add(str(evidence["node_id"]))
     if evidence.get("edge_id"):
@@ -487,6 +505,8 @@ def finalize_records(records: Dict[Tuple[str, str], Dict[str, Any]], top_k_evide
                 "functions": sorted(record["functions"]),
                 "loops": sorted(record["loops"]),
                 "pragma_ids": sorted(record["pragma_ids"]),
+                "pragma_kinds": sorted(record["pragma_kinds"]),
+                "pragma_texts": sorted(record["pragma_texts"]),
                 "top_ops": top_items(record["ops"]),
                 "top_kinds": top_items(record["kinds"]),
                 "top_evidence": evidence,
@@ -719,6 +739,8 @@ def write_csv(path: str, rows: Sequence[Dict[str, Any]]) -> None:
         "functions",
         "loops",
         "pragma_ids",
+        "pragma_kinds",
+        "pragma_texts",
         "top_ops",
         "top_kinds",
     ]

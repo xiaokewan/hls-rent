@@ -15,16 +15,25 @@ DFG/CDFG + source/pragma provenance
 
 ## Run
 
-Build the feature inputs first:
+First attach pragma provenance from the C source:
+
+```bash
+python3 dataflow_comm_scaling/extractors/annotate_pragmas.py \
+  --graph-json dataflow_comm_scaling/examples/pragma_parallel_memory_raw.json \
+  --source-c dataflow_comm_scaling/examples/kernels/mm.c \
+  --out dataflow_comm_scaling/attribution_out/pragma_parallel_memory.annotated.json
+```
+
+Then build the feature inputs:
 
 ```bash
 python3 dataflow_comm_scaling/gnn_feature_fusion.py \
-  dataflow_comm_scaling/examples/pragma_parallel_memory.json \
+  dataflow_comm_scaling/attribution_out/pragma_parallel_memory.annotated.json \
   --out dataflow_comm_scaling/gnn_out/pragma_parallel_memory.gnn.json \
   --partition topological
 
 python3 dataflow_comm_scaling/hierarchy/multilevel_rent_features.py \
-  dataflow_comm_scaling/examples/pragma_parallel_memory.json \
+  dataflow_comm_scaling/attribution_out/pragma_parallel_memory.annotated.json \
   --out dataflow_comm_scaling/hierarchy_out/pragma_parallel_memory.multilevel.json \
   --partitions topological \
   --min-nodes 1,4
@@ -36,7 +45,7 @@ Then run attribution:
 python3 dataflow_comm_scaling/attribution/pragma_attribution.py \
   --features dataflow_comm_scaling/gnn_out/pragma_parallel_memory.gnn.json \
   --hierarchy dataflow_comm_scaling/hierarchy_out/pragma_parallel_memory.multilevel.json \
-  --graph-json dataflow_comm_scaling/examples/pragma_parallel_memory.json \
+  --graph-json dataflow_comm_scaling/attribution_out/pragma_parallel_memory.annotated.json \
   --out dataflow_comm_scaling/attribution_out/pragma_parallel_memory.attribution.json \
   --csv-out dataflow_comm_scaling/attribution_out/pragma_parallel_memory.attribution.csv
 ```

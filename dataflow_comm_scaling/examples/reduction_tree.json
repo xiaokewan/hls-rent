@@ -1,0 +1,24 @@
+{
+  "name": "reduction_tree",
+  "description": "A tree reduction over eight inputs.",
+  "nodes": [
+    {"id": "x0", "op": "input", "kind": "io", "area": 1},
+    {"id": "x1", "op": "input", "kind": "io", "area": 1},
+    {"id": "x2", "op": "input", "kind": "io", "area": 1},
+    {"id": "x3", "op": "input", "kind": "io", "area": 1},
+    {"id": "r0", "op": "add", "kind": "compute", "area": 1},
+    {"id": "r1", "op": "add", "kind": "compute", "area": 1},
+    {"id": "r2", "op": "add", "kind": "compute", "area": 1},
+    {"id": "out", "op": "output", "kind": "io", "area": 1}
+  ],
+  "edges": [
+    {"src": "x0", "dst": "r0", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"},
+    {"src": "x1", "dst": "r0", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"},
+    {"src": "x2", "dst": "r1", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"},
+    {"src": "x3", "dst": "r1", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"},
+    {"src": "r0", "dst": "r2", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"},
+    {"src": "r1", "dst": "r2", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"},
+    {"src": "r2", "dst": "out", "width": 32, "rate": 1, "kind": "reduction", "semantic": "scalar"}
+  ]
+}
+

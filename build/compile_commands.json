@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/main.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/main.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/main.cpp",
+  "output": "CMakeFiles/gnl.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/argread.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/argread.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/argread.cpp",
+  "output": "CMakeFiles/gnl.dir/src/argread.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/libraries.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/libraries.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/libraries.cpp",
+  "output": "CMakeFiles/gnl.dir/src/libraries.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/pvtools.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/pvtools.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/pvtools.cpp",
+  "output": "CMakeFiles/gnl.dir/src/pvtools.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/combine.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/combine.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/combine.cpp",
+  "output": "CMakeFiles/gnl.dir/src/combine.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/delay.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/delay.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/delay.cpp",
+  "output": "CMakeFiles/gnl.dir/src/delay.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/modules.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/modules.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/modules.cpp",
+  "output": "CMakeFiles/gnl.dir/src/modules.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/write.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/write.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/write.cpp",
+  "output": "CMakeFiles/gnl.dir/src/write.cpp.o"
+},
+{
+  "directory": "/home/xiaokewan/Documents/GNL-Netlist-Generator/build",
+  "command": "/usr/bin/c++ -g -std=gnu++23 -o CMakeFiles/gnl.dir/src/parameters.cpp.o -c /home/xiaokewan/Documents/GNL-Netlist-Generator/src/parameters.cpp",
+  "file": "/home/xiaokewan/Documents/GNL-Netlist-Generator/src/parameters.cpp",
+  "output": "CMakeFiles/gnl.dir/src/parameters.cpp.o"
+}
+]

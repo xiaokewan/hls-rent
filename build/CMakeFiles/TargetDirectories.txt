@@ -1,0 +1,3 @@
+/home/xiaokewan/Documents/GNL-Netlist-Generator/build/CMakeFiles/gnl.dir
+/home/xiaokewan/Documents/GNL-Netlist-Generator/build/CMakeFiles/edit_cache.dir
+/home/xiaokewan/Documents/GNL-Netlist-Generator/build/CMakeFiles/rebuild_cache.dir

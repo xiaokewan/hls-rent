@@ -1,0 +1,26 @@
+{
+  "name": "memory_stencil",
+  "description": "Stencil-like kernel with memory loads feeding neighboring compute cells.",
+  "nodes": [
+    {"id": "mem_a", "op": "load", "kind": "memory", "area": 1},
+    {"id": "mem_b", "op": "load", "kind": "memory", "area": 1},
+    {"id": "s0", "op": "stencil", "kind": "compute", "area": 4},
+    {"id": "s1", "op": "stencil", "kind": "compute", "area": 4},
+    {"id": "s2", "op": "stencil", "kind": "compute", "area": 4},
+    {"id": "s3", "op": "stencil", "kind": "compute", "area": 4},
+    {"id": "mem_o0", "op": "store", "kind": "memory", "area": 1},
+    {"id": "mem_o1", "op": "store", "kind": "memory", "area": 1}
+  ],
+  "edges": [
+    {"src": "mem_a", "dst": "s0", "width": 64, "rate": 2, "kind": "load", "semantic": "memory"},
+    {"src": "mem_a", "dst": "s1", "width": 64, "rate": 2, "kind": "load", "semantic": "memory"},
+    {"src": "mem_b", "dst": "s2", "width": 64, "rate": 2, "kind": "load", "semantic": "memory"},
+    {"src": "mem_b", "dst": "s3", "width": 64, "rate": 2, "kind": "load", "semantic": "memory"},
+    {"src": "s0", "dst": "s1", "width": 32, "rate": 1, "kind": "stream", "semantic": "activation", "fifo_depth": 8},
+    {"src": "s1", "dst": "s2", "width": 32, "rate": 1, "kind": "stream", "semantic": "activation", "fifo_depth": 8},
+    {"src": "s2", "dst": "s3", "width": 32, "rate": 1, "kind": "stream", "semantic": "activation", "fifo_depth": 8},
+    {"src": "s1", "dst": "mem_o0", "width": 64, "rate": 1, "kind": "store", "semantic": "memory"},
+    {"src": "s3", "dst": "mem_o1", "width": 64, "rate": 1, "kind": "store", "semantic": "memory"}
+  ]
+}
+

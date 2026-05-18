@@ -1,0 +1,30 @@
+{
+  "name": "attention_all_to_all",
+  "description": "Small attention-like all-to-all block between query and key nodes.",
+  "nodes": [
+    {"id": "q0", "op": "query", "kind": "compute", "area": 2},
+    {"id": "q1", "op": "query", "kind": "compute", "area": 2},
+    {"id": "q2", "op": "query", "kind": "compute", "area": 2},
+    {"id": "k0", "op": "key", "kind": "compute", "area": 2},
+    {"id": "k1", "op": "key", "kind": "compute", "area": 2},
+    {"id": "k2", "op": "key", "kind": "compute", "area": 2},
+    {"id": "softmax", "op": "softmax", "kind": "compute", "area": 5},
+    {"id": "out", "op": "output", "kind": "io", "area": 1}
+  ],
+  "edges": [
+    {"src": "q0", "dst": "k0", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q0", "dst": "k1", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q0", "dst": "k2", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q1", "dst": "k0", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q1", "dst": "k1", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q1", "dst": "k2", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q2", "dst": "k0", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q2", "dst": "k1", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "q2", "dst": "k2", "width": 128, "rate": 1, "kind": "all_to_all", "semantic": "attention"},
+    {"src": "k0", "dst": "softmax", "width": 128, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "k1", "dst": "softmax", "width": 128, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "k2", "dst": "softmax", "width": 128, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "softmax", "dst": "out", "width": 128, "rate": 1, "kind": "stream", "semantic": "activation"}
+  ]
+}
+

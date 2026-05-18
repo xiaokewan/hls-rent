@@ -1,0 +1,24 @@
+{
+  "name": "scalar_chain",
+  "description": "Eight-node scalar dependency chain. This is the narrow classical baseline.",
+  "nodes": [
+    {"id": "n0", "op": "input", "kind": "io", "area": 1},
+    {"id": "n1", "op": "add", "kind": "compute", "area": 1},
+    {"id": "n2", "op": "add", "kind": "compute", "area": 1},
+    {"id": "n3", "op": "mul", "kind": "compute", "area": 3},
+    {"id": "n4", "op": "add", "kind": "compute", "area": 1},
+    {"id": "n5", "op": "mul", "kind": "compute", "area": 3},
+    {"id": "n6", "op": "add", "kind": "compute", "area": 1},
+    {"id": "n7", "op": "output", "kind": "io", "area": 1}
+  ],
+  "edges": [
+    {"src": "n0", "dst": "n1", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"},
+    {"src": "n1", "dst": "n2", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"},
+    {"src": "n2", "dst": "n3", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"},
+    {"src": "n3", "dst": "n4", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"},
+    {"src": "n4", "dst": "n5", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"},
+    {"src": "n5", "dst": "n6", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"},
+    {"src": "n6", "dst": "n7", "width": 1, "rate": 1, "kind": "data", "semantic": "scalar"}
+  ]
+}
+

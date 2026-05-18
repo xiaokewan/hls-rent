@@ -1,0 +1,6 @@
+# Install the PyTorch build that matches your CUDA/CPU environment first.
+# See: https://pytorch.org/get-started/locally/
+torch
+torch_geometric
+numpy
+scikit-learn

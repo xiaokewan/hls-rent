@@ -1,0 +1,24 @@
+{
+  "name": "wide_stream_pipeline",
+  "description": "Same topology as scalar_chain but every edge is a 512-bit tensor stream.",
+  "nodes": [
+    {"id": "n0", "op": "stream_in", "kind": "io", "area": 1},
+    {"id": "n1", "op": "stage", "kind": "compute", "area": 2},
+    {"id": "n2", "op": "stage", "kind": "compute", "area": 2},
+    {"id": "n3", "op": "stage", "kind": "compute", "area": 2},
+    {"id": "n4", "op": "stage", "kind": "compute", "area": 2},
+    {"id": "n5", "op": "stage", "kind": "compute", "area": 2},
+    {"id": "n6", "op": "stage", "kind": "compute", "area": 2},
+    {"id": "n7", "op": "stream_out", "kind": "io", "area": 1}
+  ],
+  "edges": [
+    {"src": "n0", "dst": "n1", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16},
+    {"src": "n1", "dst": "n2", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16},
+    {"src": "n2", "dst": "n3", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16},
+    {"src": "n3", "dst": "n4", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16},
+    {"src": "n4", "dst": "n5", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16},
+    {"src": "n5", "dst": "n6", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16},
+    {"src": "n6", "dst": "n7", "width": 512, "rate": 1, "kind": "stream", "semantic": "tensor", "fifo_depth": 16}
+  ]
+}
+

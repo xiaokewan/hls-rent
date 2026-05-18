@@ -1,0 +1,29 @@
+{
+  "name": "broadcast_fanout",
+  "description": "One producer broadcasts a value to many consumers, modeling fanout pressure.",
+  "nodes": [
+    {"id": "src", "op": "load_weight", "kind": "memory", "area": 1},
+    {"id": "c0", "op": "mac", "kind": "compute", "area": 3},
+    {"id": "c1", "op": "mac", "kind": "compute", "area": 3},
+    {"id": "c2", "op": "mac", "kind": "compute", "area": 3},
+    {"id": "c3", "op": "mac", "kind": "compute", "area": 3},
+    {"id": "c4", "op": "mac", "kind": "compute", "area": 3},
+    {"id": "c5", "op": "mac", "kind": "compute", "area": 3},
+    {"id": "sink", "op": "store", "kind": "memory", "area": 1}
+  ],
+  "edges": [
+    {"src": "src", "dst": "c0", "width": 32, "rate": 1, "kind": "broadcast", "semantic": "weight", "fanout": 6},
+    {"src": "src", "dst": "c1", "width": 32, "rate": 1, "kind": "broadcast", "semantic": "weight", "fanout": 6},
+    {"src": "src", "dst": "c2", "width": 32, "rate": 1, "kind": "broadcast", "semantic": "weight", "fanout": 6},
+    {"src": "src", "dst": "c3", "width": 32, "rate": 1, "kind": "broadcast", "semantic": "weight", "fanout": 6},
+    {"src": "src", "dst": "c4", "width": 32, "rate": 1, "kind": "broadcast", "semantic": "weight", "fanout": 6},
+    {"src": "src", "dst": "c5", "width": 32, "rate": 1, "kind": "broadcast", "semantic": "weight", "fanout": 6},
+    {"src": "c0", "dst": "sink", "width": 32, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "c1", "dst": "sink", "width": 32, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "c2", "dst": "sink", "width": 32, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "c3", "dst": "sink", "width": 32, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "c4", "dst": "sink", "width": 32, "rate": 1, "kind": "data", "semantic": "activation"},
+    {"src": "c5", "dst": "sink", "width": 32, "rate": 1, "kind": "data", "semantic": "activation"}
+  ]
+}
+

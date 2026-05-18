@@ -34,6 +34,10 @@ class Node:
     op: str = "unknown"
     kind: str = "compute"
     area: float = 1.0
+    text: str = ""
+    full_text: str = ""
+    basic_block: str = ""
+    function: str = ""
 
 
 @dataclass(frozen=True)
@@ -80,6 +84,12 @@ def _as_float(value: Any, default: float) -> float:
         return default
 
 
+def _as_optional_str(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value)
+
+
 def load_graph(path: str) -> Tuple[List[Node], List[Edge], Dict[str, Any]]:
     with open(path, "r", encoding="utf-8") as fp:
         payload = json.load(fp)
@@ -95,6 +105,12 @@ def load_graph(path: str) -> Tuple[List[Node], List[Edge], Dict[str, Any]]:
             op=str(item.get("op", "unknown")),
             kind=str(item.get("kind", "compute")),
             area=_as_float(item.get("area"), 1.0),
+            text=_as_optional_str(item.get("text", item.get("label", item.get("op", "unknown")))),
+            full_text=_as_optional_str(
+                item.get("full_text", item.get("text", item.get("label", item.get("op", "unknown"))))
+            ),
+            basic_block=_as_optional_str(item.get("basic_block", item.get("programl_block"))),
+            function=_as_optional_str(item.get("function", item.get("programl_function"))),
         )
         for item in raw_nodes
     ]
@@ -346,6 +362,24 @@ def _herfindahl(values: Iterable[float]) -> float:
     return sum((value / total) ** 2 for value in values)
 
 
+def _node_debug_label(node: Node) -> str:
+    scope = []
+    if node.function:
+        scope.append(f"f{node.function}")
+    if node.basic_block:
+        scope.append(f"b{node.basic_block}")
+    prefix = node.id if not scope else f"{node.id}@{'/'.join(scope)}"
+    label = " ".join((node.text or node.op or node.kind or node.id).split())
+    return f"{prefix}:{label.replace('|', '/')}"
+
+
+def _preview_items(items: Sequence[str], limit: int = 32) -> List[str]:
+    preview = list(items[:limit])
+    if len(items) > limit:
+        preview.append(f"...+{len(items) - limit} more")
+    return preview
+
+
 def score_region(region: Region, node_by_id: Dict[str, Node], edges: Sequence[Edge]) -> Dict[str, Any]:
     inside = set(region.nodes)
     crossing = [edge for edge in edges if (edge.src in inside) ^ (edge.dst in inside)]
@@ -372,6 +406,9 @@ def score_region(region: Region, node_by_id: Dict[str, Node], edges: Sequence[Ed
     fanout_weighted_cut = sum(edge.bw_demand * edge.fanout for edge in crossing)
 
     b_area = sum(node_by_id[node_id].area for node_id in region.nodes)
+    function_ids = sorted({node_by_id[node_id].function for node_id in region.nodes if node_by_id[node_id].function})
+    block_ids = sorted({node_by_id[node_id].basic_block for node_id in region.nodes if node_by_id[node_id].basic_block})
+    node_block_labels = _preview_items([_node_debug_label(node_by_id[node_id]) for node_id in region.nodes])
     return {
         "region_id": region.id,
         "level": region.level,
@@ -392,6 +429,9 @@ def score_region(region: Region, node_by_id: Dict[str, Node], edges: Sequence[Ed
         "sink_skew": _herfindahl(incoming_by_dst.values()),
         "fanout_weighted_cut": fanout_weighted_cut,
         "memory_fraction": c_mem / c_bw if c_bw > 0 else 0.0,
+        "function_ids": function_ids,
+        "block_ids": block_ids,
+        "node_block_labels": node_block_labels,
         "node_ids": list(region.nodes),
     }
 
@@ -535,6 +575,9 @@ def write_csv(path: str, rows: Sequence[Dict[str, Any]]) -> None:
         "sink_skew",
         "fanout_weighted_cut",
         "memory_fraction",
+        "function_ids",
+        "block_ids",
+        "node_block_labels",
         "node_ids",
     ]
     with open(path, "w", newline="", encoding="utf-8") as fp:
@@ -542,6 +585,9 @@ def write_csv(path: str, rows: Sequence[Dict[str, Any]]) -> None:
         writer.writeheader()
         for row in rows:
             serializable = dict(row)
+            serializable["function_ids"] = " ".join(serializable["function_ids"])
+            serializable["block_ids"] = " ".join(serializable["block_ids"])
+            serializable["node_block_labels"] = " | ".join(serializable["node_block_labels"])
             serializable["node_ids"] = " ".join(serializable["node_ids"])
             writer.writerow(serializable)
 

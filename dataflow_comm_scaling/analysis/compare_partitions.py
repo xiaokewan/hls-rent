@@ -79,12 +79,20 @@ def attach_deltas(rows: Sequence[Dict[str, Any]], baseline: str = "topological")
     return out
 
 
-def log_points(rows: Sequence[Dict[str, Any]], metric: str) -> List[tuple[float, float]]:
+def log_points(
+    rows: Sequence[Dict[str, Any]],
+    metric: str,
+    include_singletons: bool = False,
+) -> List[tuple[float, float]]:
     points = []
     for row in rows:
         b_node = safe_number(row.get("B_node"))
         value = safe_number(row.get(metric))
-        if b_node > 1 and value > 0:
+        if value <= 0:
+            continue
+        if include_singletons and b_node >= 1:
+            points.append((math.log2(b_node), math.log2(value)))
+        elif b_node > 1:
             points.append((math.log2(b_node), math.log2(value)))
     return points
 
@@ -94,6 +102,7 @@ def plot_loglog(
     summaries: Dict[str, Dict[str, Any]],
     metric: str,
     out_path: str,
+    include_singletons: bool = False,
 ) -> None:
     try:
         import matplotlib
@@ -109,7 +118,7 @@ def plot_loglog(
 
     _, ax = plt.subplots(figsize=(7.2, 5.0))
     for partition, rows in partition_rows.items():
-        points = log_points(rows, metric)
+        points = log_points(rows, metric, include_singletons=include_singletons)
         if not points:
             continue
         xs = [point[0] for point in points]
@@ -136,7 +145,10 @@ def plot_loglog(
             fit_y = [math.log2(float(k_value)) + float(alpha) * x for x in fit_x]
             ax.plot(fit_x, fit_y, linewidth=1.6)
 
-    ax.set_title(f"Rent scatter: log2({metric}) vs log2(B_node)")
+    title = f"Rent scatter: log2({metric}) vs log2(B_node)"
+    if not include_singletons:
+        title += " [B_node > 1 only]"
+    ax.set_title(title)
     ax.set_xlabel("log2(B_node)")
     ax.set_ylabel(f"log2({metric})")
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.45)
@@ -194,6 +206,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hmetis-ubfactor", type=int, default=5, help="hMetis balance tolerance")
     parser.add_argument("--out-dir", default="dataflow_comm_scaling/analysis_out", help="output directory")
     parser.add_argument("--prefix", help="output filename prefix")
+    parser.add_argument(
+        "--include-singletons",
+        action="store_true",
+        help="include B_node=1 leaf regions in the scatter plot (fit still uses B_node>1)",
+    )
     parser.add_argument("--no-plot", action="store_true", help="skip matplotlib scatter plot")
     return parser.parse_args()
 
@@ -234,7 +251,7 @@ def main() -> None:
     plot_path = None
     if not args.no_plot:
         plot_path = os.path.join(args.out_dir, f"{prefix}.{args.metric}.loglog_scatter.png")
-        plot_loglog(partition_rows, summaries, args.metric, plot_path)
+        plot_loglog(partition_rows, summaries, args.metric, plot_path, include_singletons=args.include_singletons)
 
     print(f"graph: {args.graph_json}")
     print_table(comparison_rows)

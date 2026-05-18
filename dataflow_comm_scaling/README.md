@@ -137,12 +137,13 @@ done
 
 ## Partition Strategies
 
-The script currently supports three recursive bisection strategies:
+The script currently supports four recursive bisection strategies:
 
 ```text
 topological   split each region in dataflow/topological order
 mincut        greedy balanced split that reduces internal cut bandwidth
 random        balanced random split, controlled by --seed
+hmetis        recursive hMetis 2-way partitioning, using each DFG edge as a 2-pin hyperedge
 ```
 
 Run with a selected strategy:
@@ -160,6 +161,11 @@ python3 dataflow_comm_scaling/dataflow_comm_scaling.py \
   dataflow_comm_scaling/examples/memory_stencil.json \
   --partition random \
   --seed 7
+
+python3 dataflow_comm_scaling/dataflow_comm_scaling.py \
+  dataflow_comm_scaling/examples/memory_stencil.json \
+  --partition hmetis \
+  --hmetis-path ./hmetis-1.5-linux/shmetis
 ```
 
 Interpretation:
@@ -167,8 +173,30 @@ Interpretation:
 - `topological` asks how communication scales when the design is cut along the producer-to-consumer dataflow direction.
 - `mincut` asks how much communication remains even when locality is optimized by a graph partitioner.
 - `random` is a baseline for whether the metric is only an artifact of balanced splitting.
+- `hmetis` asks how communication scales under a real locality-oriented hypergraph partitioner.
 
-The current `mincut` implementation is a lightweight greedy heuristic, not hMetis. It is useful for early experiments but should be replaced or complemented by hMetis/Metis for serious large-graph evaluation.
+The current hMetis adapter is intentionally simple: every directed DFG edge is
+converted into an unweighted two-pin hyperedge. Rent scoring still uses the
+original dataflow weights (`C_bit`, `C_bw`, `C_mem`, etc.) after partitioning.
+
+Compare partition strategies and generate the log-log Rent scatter plot:
+
+```bash
+python3 dataflow_comm_scaling/analysis/compare_partitions.py \
+  dataflow_comm_scaling/real_examples/hlsyn/aes.json \
+  --partitions topological,hmetis \
+  --hmetis-path ./hmetis-1.5-linux/shmetis \
+  --out-dir dataflow_comm_scaling/analysis_out \
+  --prefix aes_hlsyn \
+  --metric T_plain
+```
+
+This writes:
+
+```text
+dataflow_comm_scaling/analysis_out/aes_hlsyn.partition_compare.csv
+dataflow_comm_scaling/analysis_out/aes_hlsyn.T_plain.loglog_scatter.png
+```
 
 ## Example Graphs
 
@@ -246,9 +274,9 @@ The output records graph-level and node-level features for several recursive
 partition trees. This is the bridge to a hierarchical GNN or an ablation that
 asks how early each level becomes predictive.
 
-For large real CDFGs, start with `topological`. The current `mincut` is a
-simple Python heuristic and is intended for small graphs until hMetis/Metis is
-connected.
+For large real CDFGs, start with `topological` and `hmetis`. The current
+`mincut` strategy is still a simple Python heuristic and is intended for small
+graphs.
 
 ## Physical Routability Labels
 

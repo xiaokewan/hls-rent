@@ -24,6 +24,7 @@ dataflow_comm_scaling/hierarchy_out/
 dataflow_comm_scaling/labels_out/
 dataflow_comm_scaling/labeled_gnn_out/
 dataflow_comm_scaling/attribution_out/
+dataflow_comm_scaling/analysis_out/
 dataflow_comm_scaling/backend_smoke/out/
 dataflow_comm_scaling/backend_smoke/vivado_run/
 

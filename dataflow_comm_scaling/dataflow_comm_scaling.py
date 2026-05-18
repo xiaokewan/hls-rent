@@ -14,6 +14,9 @@ import json
 import math
 import os
 import random
+import shutil
+import subprocess
+import tempfile
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple
@@ -209,12 +212,96 @@ def split_mincut(region_nodes: Sequence[str], edges: Sequence[Edge]) -> Tuple[Li
     return left, right
 
 
+def default_hmetis_path() -> str:
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    local = os.path.join(repo_root, "hmetis-1.5-linux", "shmetis")
+    return local if os.path.exists(local) else "shmetis"
+
+
+def write_hmetis_hgraph(path: str, region_nodes: Sequence[str], edges: Sequence[Edge]) -> bool:
+    local_index = {node_id: index + 1 for index, node_id in enumerate(region_nodes)}
+    region_set = set(region_nodes)
+    hyperedges = []
+    seen = set()
+    for edge in edges:
+        if edge.src not in region_set or edge.dst not in region_set or edge.src == edge.dst:
+            continue
+        pins = tuple(sorted((local_index[edge.src], local_index[edge.dst])))
+        if pins in seen:
+            continue
+        seen.add(pins)
+        hyperedges.append(pins)
+
+    if not hyperedges:
+        return False
+
+    with open(path, "w", encoding="utf-8") as fp:
+        fp.write(f"{len(hyperedges)} {len(region_nodes)}\n")
+        for pins in hyperedges:
+            fp.write(" ".join(str(pin) for pin in pins))
+            fp.write("\n")
+    return True
+
+
+def split_hmetis(
+    region_nodes: Sequence[str],
+    edges: Sequence[Edge],
+    region_id: str,
+    seed: int,
+    hmetis_path: str | None = None,
+    ubfactor: int = 5,
+) -> Tuple[List[str], List[str]]:
+    if len(region_nodes) < 4:
+        return split_topological(region_nodes)
+
+    executable = hmetis_path or os.environ.get("HMETIS_SHMETIS") or default_hmetis_path()
+    executable = shutil.which(executable) or executable
+    if os.path.exists(executable):
+        executable = os.path.abspath(executable)
+    if not os.path.exists(executable):
+        return split_topological(region_nodes)
+
+    with tempfile.TemporaryDirectory(prefix="dfg_rent_hmetis_") as tmpdir:
+        hgraph_path = os.path.join(tmpdir, f"{region_id}.hgr")
+        if not write_hmetis_hgraph(hgraph_path, region_nodes, edges):
+            return split_topological(region_nodes)
+        command = [executable, hgraph_path, "2", str(ubfactor)]
+        try:
+            subprocess.run(
+                command,
+                cwd=tmpdir,
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError:
+            return split_topological(region_nodes)
+
+        part_path = hgraph_path + ".part.2"
+        try:
+            with open(part_path, "r", encoding="utf-8") as fp:
+                assignments = [int(line.strip()) for line in fp if line.strip()]
+        except (OSError, ValueError):
+            return split_topological(region_nodes)
+
+    if len(assignments) != len(region_nodes):
+        return split_topological(region_nodes)
+
+    left = [node_id for node_id, part in zip(region_nodes, assignments) if part == 0]
+    right = [node_id for node_id, part in zip(region_nodes, assignments) if part != 0]
+    if not left or not right:
+        return split_topological(region_nodes)
+    return left, right
+
+
 def split_region(
     region_nodes: Sequence[str],
     edges: Sequence[Edge],
     region_id: str,
     partition: str,
     seed: int,
+    hmetis_path: str | None = None,
+    hmetis_ubfactor: int = 5,
 ) -> Tuple[List[str], List[str]]:
     if partition == "topological":
         return split_topological(region_nodes)
@@ -222,6 +309,8 @@ def split_region(
         return split_random(region_nodes, region_id, seed)
     if partition == "mincut":
         return split_mincut(region_nodes, edges)
+    if partition == "hmetis":
+        return split_hmetis(region_nodes, edges, region_id, seed, hmetis_path, hmetis_ubfactor)
     raise ValueError(f"unknown partition strategy: {partition}")
 
 
@@ -231,6 +320,8 @@ def build_regions(
     min_nodes: int = 1,
     partition: str = "topological",
     seed: int = 0,
+    hmetis_path: str | None = None,
+    hmetis_ubfactor: int = 5,
 ) -> List[Region]:
     order = topological_order(nodes, edges)
     regions: List[Region] = []
@@ -239,7 +330,7 @@ def build_regions(
         regions.append(Region(region_id, level, tuple(region_nodes)))
         if len(region_nodes) <= max(min_nodes, 1):
             return
-        left, right = split_region(region_nodes, edges, region_id, partition, seed)
+        left, right = split_region(region_nodes, edges, region_id, partition, seed, hmetis_path, hmetis_ubfactor)
         recurse(left, level + 1, region_id + "0")
         recurse(right, level + 1, region_id + "1")
 
@@ -392,10 +483,20 @@ def analyze(
     min_nodes: int = 1,
     partition: str = "topological",
     seed: int = 0,
+    hmetis_path: str | None = None,
+    hmetis_ubfactor: int = 5,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     nodes, edges, meta = load_graph(path)
     node_by_id = {node.id: node for node in nodes}
-    regions = build_regions(nodes, edges, min_nodes=min_nodes, partition=partition, seed=seed)
+    regions = build_regions(
+        nodes,
+        edges,
+        min_nodes=min_nodes,
+        partition=partition,
+        seed=seed,
+        hmetis_path=hmetis_path,
+        hmetis_ubfactor=hmetis_ubfactor,
+    )
     rows = [score_region(region, node_by_id, edges) for region in regions]
     summary = summarize(rows, nodes, edges, meta, partition, seed)
     return summary, rows
@@ -478,18 +579,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-nodes", type=int, default=1, help="minimum nodes per recursive region")
     parser.add_argument(
         "--partition",
-        choices=("topological", "mincut", "random"),
+        choices=("topological", "mincut", "random", "hmetis"),
         default="topological",
         help="recursive bisection strategy",
     )
     parser.add_argument("--seed", type=int, default=0, help="seed for random partitioning")
+    parser.add_argument("--hmetis-path", help="path to hMetis shmetis executable")
+    parser.add_argument("--hmetis-ubfactor", type=int, default=5, help="hMetis balance tolerance, e.g. 5 for 45-55")
     parser.add_argument("--quiet", action="store_true", help="suppress compact stdout summary")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    summary, rows = analyze(args.graph_json, min_nodes=args.min_nodes, partition=args.partition, seed=args.seed)
+    summary, rows = analyze(
+        args.graph_json,
+        min_nodes=args.min_nodes,
+        partition=args.partition,
+        seed=args.seed,
+        hmetis_path=args.hmetis_path,
+        hmetis_ubfactor=args.hmetis_ubfactor,
+    )
 
     if args.json_out:
         write_json(args.json_out, summary)

@@ -782,7 +782,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hierarchy", help="optional dataflow_multilevel_rent_v1 JSON")
     parser.add_argument("--graph-json", help="optional normalized graph JSON for region reconstruction")
     parser.add_argument("--explanation", help="optional external GNN explanation JSON with node_scores/edge_scores")
-    parser.add_argument("--partition", choices=("topological", "mincut", "random"), help="region partition strategy")
+    parser.add_argument(
+        "--partition",
+        choices=("topological", "mincut", "random", "hmetis"),
+        help="region partition strategy",
+    )
     parser.add_argument("--min-nodes", type=int, help="minimum nodes for reconstructed regions")
     parser.add_argument("--seed", type=int, default=0, help="seed for random partition reconstruction")
     parser.add_argument("--out", required=True, help="output attribution JSON")

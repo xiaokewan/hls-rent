@@ -480,7 +480,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", required=True, help="output feature-fusion JSON")
     parser.add_argument(
         "--partition",
-        choices=("topological", "mincut", "random"),
+        choices=("topological", "mincut", "random", "hmetis"),
         default="topological",
         help="partition strategy used for global and partition-context features",
     )

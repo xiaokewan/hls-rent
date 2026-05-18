@@ -158,14 +158,21 @@ gnn_feature_fusion.py
 
 The paper should emphasize that the exponent becomes explainable through the partition tree plus source/pragma provenance, not by the scalar alpha alone.
 
-## Concrete Next Implementation Step
+## Implemented Baseline
 
-The next missing piece is a `pragma_attribution.py` pass:
+The first deterministic baseline is now:
+
+```text
+dataflow_comm_scaling/attribution/pragma_attribution.py
+```
+
+It consumes:
 
 ```text
 input:
-  labeled GNN JSON
-  hierarchical Rent JSON
+  GNN feature JSON
+  optional hierarchical Rent JSON
+  optional normalized graph JSON for region reconstruction
   optional GNN explanation scores
 
 output:
@@ -179,12 +186,14 @@ output:
     predicted congestion contribution
 ```
 
-Before a trained GNN explainer exists, we can implement a deterministic baseline:
+Before a trained GNN explainer exists, the baseline score is:
 
 ```text
 score(pragma) =
-  sum over regions touched by pragma:
-    region_risk * normalized(alpha_bw, k_bw, C_bw, C_mem)
+  node pressure from local/partition Rent features
+  + edge pressure from bit/bandwidth/semantic traffic
+  + region pressure from reconstructed recursive partitions
+  + optional GNN explainer importance
 ```
 
 After the GNN is trained, replace or combine `region_risk` with:

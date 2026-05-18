@@ -1,0 +1,180 @@
+{
+  "name": "pragma_parallel_memory",
+  "description": "Small synthetic kernel with pragma provenance for attribution smoke tests.",
+  "nodes": [
+    {
+      "id": "load_A0",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "kernels/mm.c",
+      "line": 8,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["ARRAY_PARTITION_A", "UNROLL_K"]
+    },
+    {
+      "id": "load_A1",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "kernels/mm.c",
+      "line": 9,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["ARRAY_PARTITION_A", "UNROLL_K"]
+    },
+    {
+      "id": "load_B0",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "kernels/mm.c",
+      "line": 10,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["ARRAY_PARTITION_B", "UNROLL_K"]
+    },
+    {
+      "id": "load_B1",
+      "op": "load",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "kernels/mm.c",
+      "line": 11,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["ARRAY_PARTITION_B", "UNROLL_K"]
+    },
+    {
+      "id": "mul0",
+      "op": "mul",
+      "kind": "compute",
+      "area": 3,
+      "source_file": "kernels/mm.c",
+      "line": 14,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["UNROLL_K"]
+    },
+    {
+      "id": "mul1",
+      "op": "mul",
+      "kind": "compute",
+      "area": 3,
+      "source_file": "kernels/mm.c",
+      "line": 15,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["UNROLL_K"]
+    },
+    {
+      "id": "add0",
+      "op": "add",
+      "kind": "compute",
+      "area": 1,
+      "source_file": "kernels/mm.c",
+      "line": 16,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["UNROLL_K"]
+    },
+    {
+      "id": "store_C",
+      "op": "store",
+      "kind": "memory",
+      "area": 1,
+      "source_file": "kernels/mm.c",
+      "line": 17,
+      "function": "mm",
+      "loop_id": "i_j_k",
+      "pragma_ids": ["PIPELINE_INNER"]
+    }
+  ],
+  "edges": [
+    {
+      "src": "load_A0",
+      "dst": "mul0",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "producer_line": 8,
+      "consumer_line": 14,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["ARRAY_PARTITION_A", "UNROLL_K"]
+    },
+    {
+      "src": "load_B0",
+      "dst": "mul0",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "producer_line": 10,
+      "consumer_line": 14,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["ARRAY_PARTITION_B", "UNROLL_K"]
+    },
+    {
+      "src": "load_A1",
+      "dst": "mul1",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "producer_line": 9,
+      "consumer_line": 15,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["ARRAY_PARTITION_A", "UNROLL_K"]
+    },
+    {
+      "src": "load_B1",
+      "dst": "mul1",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "producer_line": 11,
+      "consumer_line": 15,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["ARRAY_PARTITION_B", "UNROLL_K"]
+    },
+    {
+      "src": "mul0",
+      "dst": "add0",
+      "width": 256,
+      "rate": 1,
+      "kind": "data",
+      "semantic": "tensor",
+      "producer_line": 14,
+      "consumer_line": 16,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["UNROLL_K"]
+    },
+    {
+      "src": "mul1",
+      "dst": "add0",
+      "width": 256,
+      "rate": 1,
+      "kind": "data",
+      "semantic": "tensor",
+      "producer_line": 15,
+      "consumer_line": 16,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["UNROLL_K"]
+    },
+    {
+      "src": "add0",
+      "dst": "store_C",
+      "width": 256,
+      "rate": 1,
+      "kind": "memory",
+      "semantic": "tensor",
+      "producer_line": 16,
+      "consumer_line": 17,
+      "source_file": "kernels/mm.c",
+      "pragma_ids": ["PIPELINE_INNER"]
+    }
+  ]
+}

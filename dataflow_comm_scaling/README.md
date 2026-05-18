@@ -67,9 +67,11 @@ gnn_feature_fusion.py      builds GNN-ready feature-fusion graphs
 gnn/                       PyG wrapper and toy ablation scripts
 hierarchy/                 multilevel Rent feature export
 labels/                    Vivado/VPR routability label extraction
+attribution/               pragma/source-level communication-pressure attribution
 examples/                  synthetic normalized dataflow graphs
 out/                       generated outputs, ignored by convention
 gnn_out/                   generated GNN feature graphs, ignored by convention
+attribution_out/           generated attribution outputs, ignored by convention
 labels_out/                generated physical labels, ignored by convention
 labeled_gnn_out/           generated labeled GNN graphs, ignored by convention
 ```
@@ -332,6 +334,47 @@ consumer_line
 ```
 
 This is the bridge from a GNN-important node/subgraph back to a C loop, array, or pragma.
+
+## Pragma Attribution
+
+The deterministic attribution baseline maps Rent-aware communication pressure
+back to pragmas when `pragma_ids` are present. Without pragma metadata, it
+falls back to source line, loop, function, or node attribution.
+
+Run the bundled pragma-provenance smoke example:
+
+```bash
+python3 dataflow_comm_scaling/gnn_feature_fusion.py \
+  dataflow_comm_scaling/examples/pragma_parallel_memory.json \
+  --out dataflow_comm_scaling/gnn_out/pragma_parallel_memory.gnn.json \
+  --partition topological
+
+python3 dataflow_comm_scaling/hierarchy/multilevel_rent_features.py \
+  dataflow_comm_scaling/examples/pragma_parallel_memory.json \
+  --out dataflow_comm_scaling/hierarchy_out/pragma_parallel_memory.multilevel.json \
+  --partitions topological \
+  --min-nodes 1,4
+
+python3 dataflow_comm_scaling/attribution/pragma_attribution.py \
+  --features dataflow_comm_scaling/gnn_out/pragma_parallel_memory.gnn.json \
+  --hierarchy dataflow_comm_scaling/hierarchy_out/pragma_parallel_memory.multilevel.json \
+  --graph-json dataflow_comm_scaling/examples/pragma_parallel_memory.json \
+  --out dataflow_comm_scaling/attribution_out/pragma_parallel_memory.attribution.json \
+  --csv-out dataflow_comm_scaling/attribution_out/pragma_parallel_memory.attribution.csv
+```
+
+The output ranks entities such as:
+
+```text
+pragma:UNROLL_K
+pragma:ARRAY_PARTITION_A
+pragma:ARRAY_PARTITION_B
+pragma:PIPELINE_INNER
+```
+
+with dominant components like `bit_bw`, `memory`, `tensor`, `plain`, and
+`hierarchy`. This is the current bridge from Rent-like exponents to actionable
+HLS causes.
 
 ## Roadmap
 

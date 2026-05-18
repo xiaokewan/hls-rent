@@ -7,39 +7,39 @@ directed, weighted, streaming dataflow graphs. The goal is to predict future
 physical routability earlier in the HLS flow and explain the risk back to C
 source constructs such as loops, arrays, and pragmas.
 
-## Flowchart
+## Implemented Flow
 
 ```mermaid
-flowchart TD
-    A["C/C++ kernel<br/>HLS pragmas"] --> B["Open HLS / IR extractor<br/>Dynamatic, HLSyn, future Vitis/XLS"]
-    B --> C["Normalized DFG/CDFG JSON<br/>nodes, edges, width, rate, provenance"]
-    A --> D["C pragma annotation<br/>#pragma HLS -> pragma_ids"]
-    C --> D
-    D --> E["Dataflow communication scaling<br/>recursive partitioning"]
-    E --> F["Rent-like exponents<br/>alpha_plain, alpha_bit, alpha_bw,<br/>alpha_mem, alpha_tensor"]
-    E --> G["Hierarchical region features<br/>node path + partition context"]
-    D --> H["GNN feature fusion<br/>node, edge, graph features"]
-    F --> H
-    G --> H
-    B --> I["Backend implementation<br/>Vivado / VPR"]
-    I --> J["Physical labels<br/>routing congestion, routed fraction,<br/>WNS/TNS, channel width"]
-    H --> K["GNN training / ablation<br/>raw vs edge vs Rent vs hierarchy"]
-    J --> K
-    K --> L["Early routability prediction<br/>kernel and region risk"]
-    L --> M["Root-cause attribution<br/>region -> edge/node -> source line -> pragma"]
-    D --> M
+flowchart LR
+    A["Implemented extractors<br/>synthetic JSON / HLSyn GEXF / Dynamatic MLIR"]:::done --> B["Normalized DFG/CDFG JSON<br/>directed edges + width/rate + provenance"]:::key
+    C["C source pragmas<br/>PIPELINE / UNROLL / ARRAY_PARTITION"]:::done --> D["Pragma annotation<br/>adds pragma_ids / kinds / texts"]:::key
+    B --> D
+    D --> E["Dataflow Rent analysis<br/>alpha_plain / alpha_bit / alpha_bw / alpha_mem / alpha_tensor"]:::key
+    E --> F["GNN feature graph<br/>node + edge + graph features"]:::key
+    F --> G["Pragma attribution baseline<br/>region -> edge/node -> source line -> pragma"]:::key
+
+    H["Vivado/VPR reports"]:::done --> I["Routability labels<br/>congestion / routed fraction / WNS / channel width"]:::label
+    I -. "training target" .-> F
+
+    classDef key fill:#e8f3ff,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+    classDef done fill:#f8fafc,stroke:#64748b,color:#0f172a;
+    classDef label fill:#ecfdf5,stroke:#059669,color:#0f172a;
 ```
 
-## Current Pipeline
+Highlighted path:
 
 ```text
-source kernel + pragmas
-  -> normalized dataflow graph
-  -> pragma provenance annotation
-  -> dataflow/Rent communication features
-  -> PyG-ready GNN graph
-  -> backend routability labels
-  -> prediction and pragma-level attribution
+normalized DFG/CDFG
+  -> pragma annotation
+  -> dataflow Rent features
+  -> GNN feature graph
+  -> pragma-level attribution
+```
+
+Implemented label path:
+
+```text
+Vivado/VPR reports -> routability labels -> supervised GNN target
 ```
 
 Main code lives in [`dataflow_comm_scaling/`](dataflow_comm_scaling/README.md).
